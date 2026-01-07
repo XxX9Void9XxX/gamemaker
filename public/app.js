@@ -3,7 +3,9 @@ async function generate() {
     platformer: platformer.checked,
     topdown: topdown.checked,
     diep: diep.checked,
-    multiplayer: multiplayer.checked
+    multiplayer: multiplayer.checked,
+    controlsText: controlsText.value,
+    extraInstructions: extraInstructions.value
   };
 
   const res = await fetch("/generate", {
@@ -13,5 +15,5 @@ async function generate() {
   });
 
   const data = await res.json();
-  document.getElementById("preview").src = data.url;
+  preview.src = data.url;
 }
