@@ -1,3 +1,50 @@
+import express from "express";
+import fs from "fs";
+import http from "http";
+import { Server } from "socket.io";
+
+/* =========================
+   APP + SERVER SETUP
+========================= */
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
+
+const PORT = process.env.PORT || 3000;
+
+app.use(express.json());
+app.use(express.static("public"));
+
+/* =========================
+   MULTIPLAYER STATE
+========================= */
+
+const players = {};
+
+io.on("connection", socket => {
+  players[socket.id] = {
+    x: Math.random() * 600,
+    y: Math.random() * 400
+  };
+
+  socket.on("move", data => {
+    players[socket.id] = data;
+  });
+
+  socket.on("disconnect", () => {
+    delete players[socket.id];
+  });
+});
+
+setInterval(() => {
+  io.emit("state", players);
+}, 50);
+
+/* =========================
+   GAME GENERATOR ROUTE
+========================= */
+
 app.post("/generate", (req, res) => {
   const opts = req.body;
   let gameJS = "";
@@ -51,4 +98,12 @@ ${gameJS}
   fs.writeFileSync(`public/game-${id}.html`, html);
 
   res.json({ url: "/game-" + id + ".html" });
+});
+
+/* =========================
+   START SERVER (RENDER)
+========================= */
+
+server.listen(PORT, () => {
+  console.log("Server running on port", PORT);
 });
