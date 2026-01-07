@@ -2,11 +2,18 @@ import express from "express";
 import fs from "fs";
 import http from "http";
 import { Server } from "socket.io";
+import OpenAI from "openai";
 
 /* =========================
-   APP + SERVER SETUP
+   OPENAI SETUP
 ========================= */
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
+/* =========================
+   APP + SERVER
+========================= */
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -19,7 +26,6 @@ app.use(express.static("public"));
 /* =========================
    MULTIPLAYER STATE
 ========================= */
-
 const players = {};
 
 io.on("connection", socket => {
@@ -42,10 +48,56 @@ setInterval(() => {
 }, 50);
 
 /* =========================
-   GAME GENERATOR
+   AI MODIFICATION FUNCTION
 ========================= */
+async function applyAI(baseCode, opts) {
+  if (!process.env.OPENAI_API_KEY) return baseCode;
 
-app.post("/generate", (req, res) => {
+  const prompt = `
+You are modifying a JavaScript browser game.
+
+RULES:
+- Do NOT remove existing code
+- Do NOT change canvas setup
+- ONLY add logic
+- Keep everything valid JavaScript
+- Do NOT use external libraries
+
+GAME TYPE:
+${opts.topdown ? "Top-down" : opts.platformer ? "Platformer" : "Other"}
+
+CONTROLS:
+${opts.controlsText || "Default"}
+
+USER INSTRUCTIONS:
+${opts.extraInstructions || "None"}
+
+BASE CODE:
+${baseCode}
+
+TASK:
+Modify the code to better match the instructions.
+Return ONLY JavaScript code.
+`;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.3
+    });
+
+    return completion.choices[0].message.content;
+  } catch (e) {
+    console.error("AI failed, using base code", e);
+    return baseCode;
+  }
+}
+
+/* =========================
+   GENERATE GAME
+========================= */
+app.post("/generate", async (req, res) => {
   const opts = req.body;
   let gameJS = "";
 
@@ -53,6 +105,9 @@ app.post("/generate", (req, res) => {
   if (opts.topdown) gameJS += fs.readFileSync("templates/topdown.js", "utf8");
   if (opts.diep) gameJS += fs.readFileSync("templates/diep.js", "utf8");
   if (opts.multiplayer) gameJS += fs.readFileSync("templates/multiplayer-client.js", "utf8");
+
+  // Apply AI modifications
+  gameJS = await applyAI(gameJS, opts);
 
   const html = `
 <!DOCTYPE html>
@@ -103,7 +158,6 @@ ${gameJS}
 /* =========================
    START SERVER
 ========================= */
-
 server.listen(PORT, () => {
   console.log("Server running on port", PORT);
 });
