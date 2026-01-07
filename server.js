@@ -42,7 +42,7 @@ setInterval(() => {
 }, 50);
 
 /* =========================
-   GAME GENERATOR ROUTE
+   GAME GENERATOR
 ========================= */
 
 app.post("/generate", (req, res) => {
@@ -101,7 +101,7 @@ ${gameJS}
 });
 
 /* =========================
-   START SERVER (RENDER)
+   START SERVER
 ========================= */
 
 server.listen(PORT, () => {
