@@ -14,7 +14,21 @@
     <label><input type="checkbox" id="multiplayer"> Multiplayer</label>
   </div>
 
-  <button onclick="generate()">Generate Game</button>
+  <div class="controlsBox">
+    <h3>🎮 Controls (AI will use these)</h3>
+    <input
+      id="controlsText"
+      placeholder="Example: WASD to move, mouse to aim, click to shoot, space to jump"
+    />
+  </div>
+
+  <div class="bottomBar">
+    <textarea
+      id="extraInstructions"
+      placeholder="Extra AI instructions (example: fast movement, lots of enemies, neon style, chaotic)"
+    ></textarea>
+    <button onclick="generate()">Generate Game</button>
+  </div>
 
   <iframe id="preview"></iframe>
 
