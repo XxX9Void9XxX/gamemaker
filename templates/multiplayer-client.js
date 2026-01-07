@@ -1,7 +1,3 @@
-/* =========================
-   SOCKET.IO MULTIPLAYER
-========================= */
-
 const socket = io();
 
 const myPlayer = {
